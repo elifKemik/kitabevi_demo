@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Giriş - Kitabevi</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-container { width: 300px; margin: 100px auto; padding: 20px; background: white; border: 1px solid #ddd; border-radius: 8px; }
+        .login-container input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        .login-container button { width: 100%; padding: 10px; background: #333; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Kitabevi Girişi</h2>
+        <input type="text" id="username" placeholder="Kullanıcı Adı">
+        <input type="password" id="password" placeholder="Şifre">
+        <button onclick="login()">Giriş Yap</button>
+        <p>Hesabın yok mu? <a href="register.html">Kayıt Ol</a></p>
+        <p id="error-msg" style="color:red;"></p>
+    </div>
+
+    <script>
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                // Kullanıcı bilgilerini tarayıcı hafızasına kaydet
+                localStorage.setItem('user', JSON.stringify(result));
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('error-msg').innerText = result.message;
+            }
+        }
+    </script>
+</body>
+</html>
