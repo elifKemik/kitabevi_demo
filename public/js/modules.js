@@ -1,6 +1,8 @@
+const userData = JSON.parse(localStorage.getItem('user'));
 // ========== GLOBAL DEĞİŞKENLER ==========
 let myChart;
 let cart = [];
+
 
 // ========== SEPET FONKSİYONLARI ==========
 function addToCart(bookId, title, price) {
@@ -59,7 +61,7 @@ async function checkout() {
 function checkPermissions() {
     const resetBtn = document.getElementById('reset-btn');
     const adminActions = document.getElementById('admin-actions');
-    const chartSection = document.querySelector('.chart-container');
+    const chartSections = document.querySelectorAll('.chart-container'); // Tüm grafikleri seç
     const actionHeader = document.getElementById('action-header');
     const mockBtn = document.getElementById('mock-data-btn');
     const cartPanel = document.getElementById('user-cart-panel');
@@ -67,14 +69,14 @@ function checkPermissions() {
     if (userData && userData.role === 'admin') {
         if (resetBtn) resetBtn.style.display = 'block';
         if (adminActions) adminActions.style.display = 'block';
-        if (chartSection) chartSection.style.display = 'block';
+        chartSections.forEach(section => section.style.display = 'block'); // Tüm grafikleri göster
         if (actionHeader) actionHeader.style.display = 'table-cell';
         if (mockBtn) mockBtn.style.display = 'inline-block';
         if (cartPanel) cartPanel.style.display = 'none';
     } else if (userData && userData.role === 'user') {
         if (resetBtn) resetBtn.style.display = 'none';
         if (adminActions) adminActions.style.display = 'none';
-        if (chartSection) chartSection.style.display = 'none';
+        chartSections.forEach(section => section.style.display = 'none'); // Tüm grafikleri gizle
         if (actionHeader) actionHeader.style.display = 'table-cell';
         if (mockBtn) mockBtn.style.display = 'none';
         if (cartPanel) cartPanel.style.display = 'block';
@@ -127,11 +129,11 @@ async function loadBooks() {
             list.innerHTML += row;
         });
 
-        const hasJunk = books.some(b => b.title.toLowerCase().includes('asdf') || b.title.toLowerCase().includes('test'));
-        const statusTitle = document.getElementById('status-title');
-        if (statusTitle) {
-            statusTitle.innerText = hasJunk ? "Inventory - Test Env." : "Inventory Dashboard (Golden State)";
-        }
+      const hasJunk = books.length > CONFIG.GOLDEN_BOOK_COUNT;
+const statusTitle = document.getElementById('status-title');
+if (statusTitle) {
+    statusTitle.innerText = hasJunk ? "Inventory - Test Env." : "Inventory Dashboard (Golden State)";
+}
         
         checkPermissions();
     } catch (error) {
@@ -242,6 +244,40 @@ async function loadChart() {
         console.error("Grafik hatası:", error);
     }
 }
+// ========== SATIŞ ADEDİ GRAFİĞİ ==========
+let salesCountChart;
+
+async function loadSalesCountChart() {
+    const canvas = document.getElementById('salesCountChart');
+    if (!canvas) return; 
+    try {
+        const data = await API.get('/sales-count');
+        const ctx = canvas.getContext('2d');
+        
+        if (salesCountChart) salesCountChart.destroy(); 
+
+        salesCountChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Satılan Kitap Sayısı (Adet)',
+                    data: data.map(d => d.count),
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    borderWidth: 4,
+                    pointBackgroundColor: '#2c3e50',
+                    pointRadius: 5,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    } catch (error) {
+        console.error("Satış adedi grafiği hatası:", error);
+    }
+}
 
 // ========== ADMIN FONKSİYONLARI ==========
 async function adminReset() {
@@ -249,8 +285,9 @@ async function adminReset() {
         const response = await API.post('/reset', {});
         const result = await response.json();
         alert(result.message);
-        loadBooks();
-        loadChart();
+        await loadBooks();
+        await loadChart();
+        await loadSalesCountChart();  // YENİ - satış adedi grafiğini yenile
     }
 }
 
@@ -259,7 +296,8 @@ async function generateMockSales() {
         const response = await API.post('/generate-mock-sales', {});
         const result = await response.json();
         alert(result.message);
-        if (typeof loadChart === "function") await loadChart();
+        await loadChart();              // Gelir grafiğini yenile
+        await loadSalesCountChart();    // YENİ - satış adedi grafiğini yenile
     } catch (error) {
         console.error("Veri üretme hatası:", error);
         alert("Sunucuya bağlanılamadı.");
@@ -276,3 +314,16 @@ const mockBtn = document.getElementById('mock-data-btn');
 if (mockBtn) {
     mockBtn.onclick = generateMockSales;
 }
+// Global'e expose et (navigation.js kullanabilir)
+// Global'e expose et (app.js ve navigation.js kullanabilir)
+window.loadChart = loadChart;
+window.loadSalesCountChart = loadSalesCountChart;
+window.loadBooks = loadBooks;
+window.checkPermissions = checkPermissions;
+window.userData = userData;
+window.addToCart = addToCart;
+window.checkout = checkout;
+window.editBook = editBook;
+window.saveEdit = saveEdit;
+window.deleteBook = deleteBook;
+window.addBook = addBook;

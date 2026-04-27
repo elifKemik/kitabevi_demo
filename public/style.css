@@ -17,3 +17,30 @@ canvas {
     width: 100% !important;
     height: 100% !important;
 }
+.page-content {
+    display: none;
+}
+
+.page-content.active-page {
+    display: block;
+}
+
+.nav-item {
+    cursor: pointer;
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.nav-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.nav-item.active {
+    background: #3498db;
+    color: white;
+}
+
+.charts-wrapper .chart-container:first-child {
+    margin-top: 0;
+}

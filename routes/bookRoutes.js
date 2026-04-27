@@ -128,5 +128,24 @@ router.post('/generate-mock-sales', (req, res) => {
     });
 });
 
+// satılan kitap sayısı istatistikleri (adet bazında)
+router.get('/sales-count', (req, res) => {
+    const sql = `SELECT strftime('%m', sale_date) as month, COUNT(*) as count FROM Sales GROUP BY month`;
+    db.all(sql, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const stats = Array(12).fill(0).map((_, i) => ({
+            month: (i + 1).toString().padStart(2, '0'),
+            count: 0
+        }));
+        
+        rows.forEach(row => {
+            const index = parseInt(row.month) - 1;
+            stats[index].count = row.count;
+        });
+        
+        res.json(stats);
+    });
+});
     return router;
 };
