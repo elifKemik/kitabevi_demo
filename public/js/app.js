@@ -7,17 +7,22 @@ if (!window.userData) {
 
 // ========== UYGULAMA BAŞLATICI ==========
 async function init() {
-    // loadBooks'u modules.js'den çağır
-    if (typeof window.loadBooks === 'function') {
-        await window.loadBooks();
-    } else {
-        console.error("loadBooks fonksiyonu bulunamadı!");
-    }
-    
-    if (window.userData.role === 'admin') {
-        if (typeof window.loadChart === 'function') await window.loadChart();
-        if (typeof window.loadSalesCountChart === 'function') await window.loadSalesCountChart();
+    try {
+        // Doğrudan fonksiyonları çağır (window olmadan)
+        if (typeof loadBooks !== 'undefined') {
+            await loadBooks();
+        } else {
+            console.error("loadBooks tanımlı değil, script sırasını kontrol et");
+        }
+        
+        if (window.userData.role === 'admin') {
+            if (typeof loadChart !== 'undefined') await loadChart();
+            if (typeof loadSalesCountChart !== 'undefined') await loadSalesCountChart();
+        }
+    } catch (error) {
+        console.error("init hatası:", error);
     }
 }
 
-init();
+// Sayfa yüklendikten sonra çalıştır
+window.addEventListener('load', init);
